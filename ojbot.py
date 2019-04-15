@@ -180,21 +180,74 @@ class OnejavTorrentTrawler:
 		
 	# 상세 정보 수집
 	def get_jav_info(self, poombun):
+		page_address = False
 		actresses = ''
 		#javlib_url = 'http://www.w24j.com/ja/'
-		javlib_url = 'http://www.d28k.com/ja/'
-		
+		javlib_base_url = 'http://www.d28k.com/ja/'
+		javlib_url = javlib_base_url
+
+		if (poombun[:7] == 'http://' or poombun[:8] == 'https://'):
+			page_address = True
+			javlib_url = poombun
+
 		self.driver.get(javlib_url)
-		self.driver.find_element_by_id('idsearchbox').send_keys(poombun)
-		button = self.driver.find_element_by_xpath('//*[@id="idsearchbutton"]')
-		self.driver.execute_script("arguments[0].click();", button)
+
+		if (page_address == False):
+			self.driver.find_element_by_id('idsearchbox').send_keys(poombun)
+			button = self.driver.find_element_by_xpath('//*[@id="idsearchbutton"]')
+			self.driver.execute_script("arguments[0].click();", button)
 		
 		html = self.driver.page_source
 		soup = BeautifulSoup(html, 'html.parser')
+
+		#print (soup)
+		if soup.find('div', {'id':'video_title'}) == None:
+			found = False
+			print(' There is no video_title.')
+			vth_list = soup.find('div', {'class':'videothumblist'})
+			if vth_list == None:
+				print(' There is no videothumblist.')
+				return None, None, None, None, None
+
+			video_list = vth_list.find('div', {'class':'videos'}).find_all('div', {'class':'video'})
+			if video_list == None:
+				print(' There is no videos.')
+				return None, None, None, None, None
+
+			if video_list == None:
+				print(' There is no video list.')
+				return None, None, None, None, None
+
+			for video in video_list:
+				title = video.find('a')['title']
+				if title == None:
+					print(' There is no title.')
+				
+				if title.find('ブルーレイディスク') == -1 :
+					print(' Found not bluelay disk.')
+					javlib_url = javlib_base_url + video.find('a')['href'][2:]
+					if javlib_url == None :
+						print(' There is no href.')
+						return None, None, None, None, None
+					self.driver.get(javlib_url)
+					html = self.driver.page_source
+					soup = BeautifulSoup(html, 'html.parser')
+					found = True
+					break
+
+			if found == False:
+				print(' There is bluelay disk only.')
+				return None, None, None, None, None
+
+		jacket_url = soup.find('div', {'id':'video_jacket'}).find('img')['src']
+		#jacket_url = jacket_url.find('img')['src']
+
+		if (page_address == True):
+			poombun = soup.find('div', {'id':'video_id'}).find_all('td')[1].get_text().strip().lower()
 		
 		maker = soup.find('div', {'id':'video_maker'})
 		if (maker == None):
-			return None, None, None
+			return None, None, None, None, None
 			
 		maker = maker.find('td', {'class':'text'}).get_text().strip()
 		rel_date = soup.find('div', {'id':'video_date'}).find('td', {'class':'text'}).get_text().strip()
@@ -216,7 +269,7 @@ class OnejavTorrentTrawler:
 		rel_date = re.sub('-', '', rel_date)
 		maker = re.sub('/.*$', '', maker)
 		
-		return rel_date, maker, actresses
+		return rel_date, maker, actresses, jacket_url, poombun
 		
 		
 	def check_alert_and_cancel(self):
@@ -262,7 +315,7 @@ class OnejavTorrentTrawler:
 				poombun = self.make_poombun_format(poomsize.find('a').get_text().strip())
 				filesize = poomsize.find('span').get_text().strip()
 				print('[{0}-{1}-{2}] {3}({4})'.format(date, page, index, poombun, filesize))
-				rel_date, maker, actresses = self.get_jav_info(poombun)
+				rel_date, maker, actresses, notused1, notused2 = self.get_jav_info(poombun)
 				if(rel_date == None):
 					filename = poombun
 				else:
@@ -324,7 +377,45 @@ class OnejavTorrentTrawler:
 			else:
 				print('   >> There is no page navigation, Ripping completed.')
 				break
-				
+
+	def get_video_jacket(self, poombun):
+		poombun = poombun.lower()
+
+		rel_date, maker, actresses, jacket_url, poombun = self.get_jav_info(poombun)
+		if rel_date == None:
+			print('Unknown poombun: {0}'.format(poombun))
+			return
+
+		maker = self.convert_maker(maker)
+		if(actresses == ''):
+			filename = '{0} {1} {2}'.format(maker, poombun, rel_date)
+		else:
+			filename = '{0} {1} {2} {3}'.format(maker, poombun, rel_date, actresses)
+
+		# 이미지 파일 다운로드
+		img_fname = '{}.jpg'.format(filename)
+		if (os.path.isfile(img_fname) == False):
+			while True:
+				retry_count = 0
+				try:
+					urllib.request.urlretrieve(jacket_url, img_fname)
+				except Exception as e:
+					print (e)
+					sleep(3)
+					retry_count = retry_count + 1
+					if (retry_count < 3):
+						continue
+				break
+
+
+def show_help():
+	print('Usage: {0} <command> [<date>]'.format(sys.argv[0]))
+	print('   <command> :')
+	print('      - f <yyyy/mm/dd>: find out about actress''s name')
+	print('      - s <yyyy/mm/dd>: download seeds and posters')
+	print('      - p <sam-572 | http://www.d28k.com/ja/...>: download poster')				
+
+
 if __name__ == '__main__':
 	date = '2018/06/01'
 	browser = 'chrome'
@@ -341,15 +432,20 @@ if __name__ == '__main__':
 	'''
 	# test code
 	
-	if len(sys.argv) == 2:
-		date = sys.argv[1]
-		check = False
-	elif len(sys.argv) == 3:
-		date = sys.argv[1]
+	if len(sys.argv) != 3:
+		show_help()
+		sys.exit(0)
+
+	if sys.argv[1] == 'f':
 		check = True
-	else:
-		print('Usage: {0} <date>'.format(sys.argv[0]))
-		print('   <date> format : yyyy/mm/dd <check>')
+		date = sys.argv[2]
+	elif sys.argv[1] == 's':
+		check = False
+		date = sys.argv[2]
+	elif sys.argv[1] == 'p':
+		poombun = sys.argv[2]
+	else: 
+		show_help()
 		sys.exit(0)
 		
 	ojtt = OnejavTorrentTrawler()
@@ -357,5 +453,10 @@ if __name__ == '__main__':
 	ojtt.init_driver(browser)
 	print('({0}) driver initialized.'.format(browser))
 	
-	ojtt.run_ripping(date, check)
+	if sys.argv[1] == 'f' or sys.argv[1] == 's':
+		ojtt.run_ripping(date, check)
+	else :
+		ojtt.get_video_jacket(poombun)
 	
+
+
