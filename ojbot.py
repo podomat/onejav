@@ -23,6 +23,12 @@ class OnejavTorrentTrawler:
 		self.fireofx_driver_path = 'C:\eData\geckodriver\geckodriver'
 		self.url_prefix = 'https://onejav.com'
 		self.data_dir = '../onejav_data/'
+
+	# 소멸자
+	def __del__(self):
+		if(self.driver != None):
+			self.driver.close()
+		#self.close_log()
 		
 	
 	# 웹 드라이버 초기화
