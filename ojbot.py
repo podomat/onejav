@@ -246,6 +246,8 @@ class OnejavTorrentTrawler:
 				return None, None, None, None, None
 
 		jacket_url = soup.find('div', {'id':'video_jacket'}).find('img')['src']
+		if jacket_url[:2] == '//':
+			jacket_url = 'http:' + jacket_url
 		#jacket_url = jacket_url.find('img')['src']
 
 		if (page_address == True):
