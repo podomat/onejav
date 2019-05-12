@@ -352,7 +352,7 @@ class OnejavTorrentTrawler:
 							if (retry_count < 3):
 								continue
 						break
-				
+
 				# 토렌트 파일 다운로드
 				tor_fname = '{0}/{1}({2}).torrent'.format(directory, filename, filesize)
 				if (os.path.isfile(tor_fname) == False):
@@ -361,11 +361,12 @@ class OnejavTorrentTrawler:
 					while True:
 						retry_count = 0
 						try:
+							#print('다운로드 시도: {} -> {}'.format(tor_url, tor_fname))
 							urllib.request.urlretrieve(tor_url, tor_fname)
 							#print('wget.download: {0}'.format(tor_url))
 							#wget.download(tor_url, tor_fname)
 						except Exception as e:
-							print (e)
+							print ('Exception: {}'.format(e))
 							sleep(3)
 							retry_count = retry_count + 1
 							if (retry_count < 3):
