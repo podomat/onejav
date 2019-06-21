@@ -189,7 +189,8 @@ class OnejavTorrentTrawler:
 		page_address = False
 		actresses = ''
 		#javlib_url = 'http://www.w24j.com/ja/'
-		javlib_base_url = 'http://www.d28k.com/ja/'
+		#javlib_base_url = 'http://www.d28k.com/ja/'
+		javlib_base_url = 'http://www.c32r.com/ja/'
 		javlib_url = javlib_base_url
 
 		if (poombun[:7] == 'http://' or poombun[:8] == 'https://'):
