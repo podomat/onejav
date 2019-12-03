@@ -9,7 +9,7 @@ import datetime
 import sys
 import random
 from time import sleep
-import urllib
+import urllib.request
 import re
 import os
 import db
@@ -48,7 +48,7 @@ class OnejavTorrentTrawler:
 			'''
 			options.add_argument('log-level=1')
 			options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images":2})
-			self.driver = webdriver.Chrome(self.webdriver_path, chrome_options=options)
+			self.driver = webdriver.Chrome(self.webdriver_path, options=options)
 			self.driver.set_window_size(1280, 960)
 		
 		elif(browser == 'firefox'):
@@ -188,7 +188,7 @@ class OnejavTorrentTrawler:
 	def get_jav_info(self, poombun):
 		page_address = False
 		actresses = ''
-		javlib_base_url = 'http://www.t33r.com/ja/'
+		javlib_base_url = 'http://www.h28o.com/ja/'
 		javlib_url = javlib_base_url
 
 		if (poombun[:7] == 'http://' or poombun[:8] == 'https://'):
@@ -196,6 +196,8 @@ class OnejavTorrentTrawler:
 			javlib_url = poombun
 
 		self.driver.get(javlib_url)
+
+		sleep(5)
 
 		if (page_address == False):
 			self.driver.find_element_by_id('idsearchbox').send_keys(poombun)
