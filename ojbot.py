@@ -9,7 +9,7 @@ import datetime
 import sys
 import random
 from time import sleep
-import urllib
+import urllib.request
 import re
 import os
 import db
@@ -32,11 +32,10 @@ class OnejavTorrentTrawler:
 		
 	
 	# 웹 드라이버 초기화
-	def init_driver(self, browser):
+	def init_driver(self, browser, headless):
 		self.browser_name = browser
 		if(browser == 'chrome'):
 			options = webdriver.ChromeOptions()
-			options.add_argument('headless')
 			
 			'''
 			크롬 로그 레벨			
@@ -47,8 +46,12 @@ class OnejavTorrentTrawler:
 			- default is 0.
 			'''
 			options.add_argument('log-level=1')
-			options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images":2})
-			self.driver = webdriver.Chrome(self.webdriver_path, chrome_options=options)
+
+			if headless == True:
+				options.add_argument('headless')
+				options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images":2})
+
+			self.driver = webdriver.Chrome(self.webdriver_path, options=options)
 			self.driver.set_window_size(1280, 960)
 		
 		elif(browser == 'firefox'):
@@ -188,7 +191,7 @@ class OnejavTorrentTrawler:
 	def get_jav_info(self, poombun):
 		page_address = False
 		actresses = ''
-		javlib_base_url = 'http://www.t33r.com/ja/'
+		javlib_base_url = 'http://www.h28o.com/ja/'
 		javlib_url = javlib_base_url
 
 		if (poombun[:7] == 'http://' or poombun[:8] == 'https://'):
@@ -196,6 +199,8 @@ class OnejavTorrentTrawler:
 			javlib_url = poombun
 
 		self.driver.get(javlib_url)
+
+		sleep(1)
 
 		if (page_address == False):
 			self.driver.find_element_by_id('idsearchbox').send_keys(poombun)
@@ -417,32 +422,33 @@ class OnejavTorrentTrawler:
 
 
 def show_help():
-	print('Usage: {0} <command> [<date>]'.format(sys.argv[0]))
+	print('Usage: {0} <command> [<date>] [<options>]'.format(sys.argv[0]))
 	print('   <command> :')
-	print('      - f <yyyy/mm/dd>: find out about actress''s name')
-	print('      - s <yyyy/mm/dd>: download seeds and posters')
-	print('      - p <sam-572 | http://www.d28k.com/ja/...>: download poster')				
+	print('      f <yyyy/mm/dd>: find out about actress''s name')
+	print('      s <yyyy/mm/dd>: download seeds and posters')
+	print('      p <sam-572 | http://www.d28k.com/ja/...>: download poster')				
+	print('   <options> :')
+	print('      --nohl : do not apply headless option')				
+
 
 
 if __name__ == '__main__':
 	date = '2018/06/01'
 	browser = 'chrome'
 	check = False
+	headless = True
 	#browser = 'firefox'
 	
-	# test code
-	'''
-	ojtt = OnejavTorrentTrawler()
-	ojtt.init_driver(browser)
-	kname = ojtt.get_kor_name_from_hentaku('永嶋輝子')
-	print (kname)
-	sys.exit(0)
-	'''
-	# test code
-	
-	if len(sys.argv) != 3:
+	if len(sys.argv) != 3 and len(sys.argv) != 4:
 		show_help()
 		sys.exit(0)
+
+	if len(sys.argv) == 4:
+		if sys.argv[3] == '--nohl':
+			headless = False
+		else:
+			show_help()
+			sys.exit(0)
 
 	if sys.argv[1] == 'f':
 		check = True
@@ -458,7 +464,7 @@ if __name__ == '__main__':
 		
 	ojtt = OnejavTorrentTrawler()
 	print('Onejav trawlBot instance created.')
-	ojtt.init_driver(browser)
+	ojtt.init_driver(browser, headless)
 	print('({0}) driver initialized.'.format(browser))
 	
 	if sys.argv[1] == 'f' or sys.argv[1] == 's':
