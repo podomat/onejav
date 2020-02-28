@@ -200,15 +200,23 @@ class OnejavTorrentTrawler:
 
 		self.driver.get(javlib_url)
 
+		#print('Read URL: {}'.format(javlib_url))
 		sleep(1)
+		#print('sleep 5 completed.')
 
 		if (page_address == False):
 			self.driver.find_element_by_id('idsearchbox').send_keys(poombun)
 			button = self.driver.find_element_by_xpath('//*[@id="idsearchbutton"]')
 			self.driver.execute_script("arguments[0].click();", button)
 		
+		#print('button click completed.')
+
+		sleep(1)
+		#print('sleep 1 completed.')
 		html = self.driver.page_source
 		soup = BeautifulSoup(html, 'html.parser')
+
+		#print('html.parser completed.')
 
 		#print (soup)
 		if soup.find('div', {'id':'video_title'}) == None:
@@ -286,7 +294,7 @@ class OnejavTorrentTrawler:
 		
 	def check_alert_and_cancel(self):
 		try:
-			alert = self.driver.switch_to_alert()
+			alert = self.driver.switch_to.alert()
 			if(alert != None):
 				self.comment_alert = alert.text.strip()
 				print('   >> Alert: {0}'.format(self.comment_alert))
@@ -351,7 +359,7 @@ class OnejavTorrentTrawler:
 							urllib.request.urlretrieve(img_url, img_fname)
 						except Exception as e:
 							print (e)
-							sleep(3)
+							sleep(1)
 							retry_count = retry_count + 1
 							if (retry_count < 3):
 								continue
@@ -371,7 +379,7 @@ class OnejavTorrentTrawler:
 							#wget.download(tor_url, tor_fname)
 						except Exception as e:
 							print ('Exception: {}'.format(e))
-							sleep(3)
+							sleep(1)
 							retry_count = retry_count + 1
 							if (retry_count < 3):
 								continue
@@ -414,7 +422,7 @@ class OnejavTorrentTrawler:
 					urllib.request.urlretrieve(jacket_url, img_fname)
 				except Exception as e:
 					print (e)
-					sleep(3)
+					sleep(1)
 					retry_count = retry_count + 1
 					if (retry_count < 3):
 						continue
